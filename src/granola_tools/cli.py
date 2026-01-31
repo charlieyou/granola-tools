@@ -100,6 +100,15 @@ def find_meeting(data: dict, query: str):
     return None
 
 
+def fuzzy_match(query: str, text: str) -> bool:
+    """Simple fuzzy match: all query words must appear in text (any order)."""
+    if not query or not text:
+        return False
+    query_words = query.lower().split()
+    text_lower = text.lower()
+    return all(word in text_lower for word in query_words)
+
+
 def filter_meetings(
     meetings: list,
     date: Optional[str] = None,
@@ -110,6 +119,7 @@ def filter_meetings(
     until: Optional[str] = None,
     last: Optional[str] = None,
     attendee: Optional[str] = None,
+    title: Optional[str] = None,
 ) -> list:
     """Apply filters to meeting list. Filters are ANDed together."""
     result = meetings
@@ -142,7 +152,11 @@ def filter_meetings(
             filtered.append(m)
         result = filtered
     
-    # Attendee filter (can combine with date filters)
+    # Title fuzzy filter
+    if title:
+        result = [m for m in result if fuzzy_match(title, m.get("title") or "")]
+    
+    # Attendee filter
     if attendee:
         attendee_lower = attendee.lower()
         result = [m for m in result if any(attendee_lower in s for s in get_attendee_strings(m))]
@@ -153,7 +167,7 @@ def filter_meetings(
 @app.command("ls")
 @app.command("list", hidden=True)
 def list_meetings(
-    limit: int = typer.Option(20, "-n", "--limit", help="Max results (0 for unlimited)"),
+    limit: int = typer.Option(10, "-n", "--limit", help="Max results (0 for unlimited)"),
     date: Optional[str] = typer.Option(None, "-d", "--date", help="Filter by date (YYYY-MM-DD)"),
     today: bool = typer.Option(False, "--today", help="Show today's meetings"),
     yesterday: bool = typer.Option(False, "--yesterday", help="Show yesterday's meetings"),
@@ -162,6 +176,7 @@ def list_meetings(
     until: Optional[str] = typer.Option(None, "--until", help="To date inclusive (YYYY-MM-DD)"),
     last: Optional[str] = typer.Option(None, "--last", help="Last N days (e.g. 7d)"),
     attendee: Optional[str] = typer.Option(None, "-a", "--attendee", help="Filter by attendee name/email"),
+    title: Optional[str] = typer.Option(None, "-t", "--title", help="Fuzzy search by title"),
     output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ):
     """List meetings, sorted by date descending.
@@ -202,7 +217,7 @@ def list_meetings(
         meetings,
         date=date, today=today, yesterday=yesterday,
         month=month, since=since, until=until, last=last,
-        attendee=attendee,
+        attendee=attendee, title=title,
     )
     
     # Sort by date descending
