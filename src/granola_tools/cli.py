@@ -102,7 +102,12 @@ def list_meetings(
         name?: string,
         email: string,
         details?: {
-          person?: {name?: {fullName, givenName?, familyName?}, avatar?: string, employment?: {name, title}, linkedin?: {handle}},
+          person?: {
+            name?: {fullName: string, givenName?: string, familyName?: string},
+            avatar?: string,
+            employment?: {name: string, title: string},
+            linkedin?: {handle: string}
+          },
           company?: {name?: string}
         }
       }]
@@ -185,7 +190,12 @@ def show(
         name?: string,
         email: string,
         details?: {
-          person?: {name?: {fullName, givenName?, familyName?}, avatar?: string, employment?: {name, title}, linkedin?: {handle}},
+          person?: {
+            name?: {fullName: string, givenName?: string, familyName?: string},
+            avatar?: string,
+            employment?: {name: string, title: string},
+            linkedin?: {handle: string}
+          },
           company?: {name?: string}
         }
       }]
