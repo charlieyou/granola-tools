@@ -120,6 +120,8 @@ def list_meetings(
         meetings = meetings[:limit]
     
     if output_json:
+        for m in meetings:
+            m["path"] = str(TRANSCRIPTS_ROOT / m.get("dir", ""))
         print(json.dumps(meetings, indent=2))
         return
     
@@ -149,6 +151,7 @@ def show(
         raise typer.Exit(1)
     
     if output_json:
+        match["path"] = str(TRANSCRIPTS_ROOT / match.get("dir", ""))
         print(json.dumps(match, indent=2))
         return
     
