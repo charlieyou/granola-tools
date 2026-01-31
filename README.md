@@ -2,6 +2,8 @@
 
 CLI for syncing and searching Granola meeting transcripts.
 
+Based on [getprobo/reverse-engineering-granola-api](https://github.com/getprobo/reverse-engineering-granola-api).
+
 ## Installation
 
 ```bash
