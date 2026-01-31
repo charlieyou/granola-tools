@@ -7,6 +7,8 @@ Based on [getprobo/reverse-engineering-granola-api](https://github.com/getprobo/
 ## Installation
 
 ```bash
+git clone https://github.com/charlieyou/granola-tools
+cd granola-tools
 uv tool install -e .
 ```
 
@@ -33,37 +35,79 @@ cat ~/Library/Application\ Support/Granola/supabase.json | jq -r '.workos_tokens
 
 ## Usage
 
+### Sync & Index
+
 ```bash
-# Sync meetings from Granola API
-granola sync
+granola sync          # Sync meetings from Granola API
+granola sync --full   # Force full sync (ignore incremental state)
+granola index         # Rebuild local search index
+```
 
-# Rebuild local index
-granola index
+### List Meetings
 
-# List recent meetings
-granola ls
-granola ls -n 50
+```bash
+granola ls                        # List recent meetings (default: 10)
+granola ls -n 50                  # Limit results
+granola ls -n 0                   # Unlimited
+
+# Date filters
 granola ls --today
 granola ls --yesterday
 granola ls --last 7d
-granola ls -d 2024-01-15
+granola ls -d 2024-01-15          # Specific date
+granola ls -m 2024-01             # Specific month
 granola ls --since 2024-01-01 --until 2024-01-31
 
-# Show meeting details
-granola show <id>
-granola show "meeting title"
+# Filter by attendee (partial match on name/email)
+granola ls -a Adam
+granola ls --attendee bryan@rwa.xyz
 
-# View transcript or notes
-granola t <id>      # transcript
-granola r <id>      # resume/notes
+# Fuzzy search by title (all words must match)
+granola ls -t "data sync"
+granola ls -t standup --last 7d
 
-# Stats
-granola stats
+# Combine filters
+granola ls --last 30d -a Adam -t sync -n 5
+
+# JSON output for scripting
+granola ls --json | jq '.[0].title'
+```
+
+### View Meetings
+
+```bash
+granola show <id>           # Show meeting details
+granola show e9053e5        # By short ID
+granola show "Standup"      # By title match
+
+granola t <id>              # Print transcript
+granola r <id>              # Print notes/resume
+
+# JSON output
+granola show <id> --json
+```
+
+### Stats
+
+```bash
+granola stats               # Index statistics
+granola stats --json
+```
+
+## Output Format
+
+```
+$ granola ls -n 2
+e9053e5  2026-01-30 14:00  (15 min)  Standup
+  Pasha <pasha@rwa.xyz>, Devang Patel <devang@rwa.xyz>, Adam Lawrence <adam@rwa.xyz>
+
+0b23dc5  2026-01-29 14:00  (15 min)  Standup
+  Pasha <pasha@rwa.xyz>, Devang Patel <devang@rwa.xyz>, Adam Lawrence <adam@rwa.xyz>
 ```
 
 ## Search with qmd
 
-For full-text and semantic search, use [qmd](https://github.com/tobi/qmd):
+For full-text and semantic search across transcripts, use [qmd](https://github.com/tobi/qmd):
 
 ```bash
 # One-time setup
@@ -71,8 +115,8 @@ qmd collection add ~/.granola/transcripts --name granola --mask "**/*.md"
 qmd embed  # generate vector embeddings
 
 # Search
-qmd search "pricing discussion" -c granola          # BM25 full-text
-qmd vsearch "what did we decide about X" -c granola # semantic
+qmd search "pricing discussion" -c granola            # BM25 full-text
+qmd vsearch "what did we decide about X" -c granola   # semantic
 qmd query "action items from last standup" -c granola # hybrid + reranking
 ```
 
@@ -97,7 +141,9 @@ The path in results contains the meeting UUID — use `granola show <uuid>` for 
 │   └── index.json      # Meeting metadata index
 └── transcripts/
     └── <uuid>/         # Per-meeting folder
+        ├── document.json
         ├── metadata.json
         ├── transcript.md
+        ├── transcript.json
         └── resume.md
 ```
