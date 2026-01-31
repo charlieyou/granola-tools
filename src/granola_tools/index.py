@@ -6,15 +6,19 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 try:
     from zoneinfo import ZoneInfo
 except Exception:  # pragma: no cover
     ZoneInfo = None
 
-ROOT = Path("~/Documents/granola-transcripts").expanduser()
-OUT = Path("~/Documents/granola-search/state/index.json").expanduser()
+ROOT = Path(os.getenv("GRANOLA_TRANSCRIPTS_PATH", "~/Documents/granola-transcripts")).expanduser()
+OUT = Path(os.getenv("GRANOLA_INDEX_PATH", "~/Documents/granola-search/state/index.json")).expanduser()
 SCHEMA_VERSION = 1
-LOCAL_TZ = "America/New_York"
+LOCAL_TZ = os.getenv("GRANOLA_TIMEZONE", "America/New_York")
 
 
 def read_json(path: Path):

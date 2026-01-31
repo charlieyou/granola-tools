@@ -2,12 +2,17 @@
 """Granola meeting search CLI."""
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
 
-INDEX_PATH = Path("~/Documents/granola-search/state/index.json").expanduser()
-TRANSCRIPTS_ROOT = Path("~/Documents/granola-transcripts").expanduser()
+from dotenv import load_dotenv
+
+load_dotenv()
+
+INDEX_PATH = Path(os.getenv("GRANOLA_INDEX_PATH", "~/Documents/granola-search/state/index.json")).expanduser()
+TRANSCRIPTS_ROOT = Path(os.getenv("GRANOLA_TRANSCRIPTS_PATH", "~/Documents/granola-transcripts")).expanduser()
 
 
 def load_index():

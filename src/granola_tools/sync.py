@@ -1,18 +1,23 @@
 import argparse
 import logging
 from pathlib import Path
-import traceback
 import json
 import os
 import requests
 from datetime import datetime, timezone
-from token_manager import TokenManager
+
+from dotenv import load_dotenv
+from .token_manager import TokenManager
+
+load_dotenv()
+
+LOG_FILE = Path(os.getenv("GRANOLA_LOG_FILE", "granola_sync.log"))
 
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('granola_sync.log'),
+        logging.FileHandler(LOG_FILE),
         logging.StreamHandler()
     ]
 )
@@ -422,10 +427,6 @@ def main():
             logger.info(f"Incremental sync - last sync was {sync_state['last_sync']}")
         else:
             logger.info("No previous sync state found - will sync all documents")
-
-    logger.info("Checking for config.json...")
-    if not check_config_exists():
-        return
 
     logger.info("Initializing token manager...")
     token_manager = TokenManager()
