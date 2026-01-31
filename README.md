@@ -81,7 +81,7 @@ granola show e9053e5        # By short ID
 granola show "Standup"      # By title match
 
 granola t <id>              # Print transcript
-granola r <id>              # Print notes/resume
+granola notes <id>          # Print notes
 
 # JSON output
 granola show <id> --json

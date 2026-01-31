@@ -219,6 +219,9 @@ def build_index():
                 "id": full_id,
                 "short_id": short_id,
                 "dir": entry.name,
+                "path": str(folder),
+                "transcript_path": str(folder / "transcript.md"),
+                "notes_path": str(folder / "resume.md"),
                 "title": choose_title(meta, doc),
                 "date_utc": iso_z(dt_utc),
                 "date_local": dt_local.isoformat() if dt_local else None,
@@ -228,7 +231,7 @@ def build_index():
                 "attendees_raw": extract_attendees(doc),
                 "duration_min": extract_duration(doc),
                 "has_transcript": (folder / "transcript.json").exists() or (folder / "transcript.md").exists(),
-                "has_resume": (folder / "resume.md").exists(),
+                "has_notes": (folder / "resume.md").exists(),
                 "mtime": int(folder.stat().st_mtime),
             })
 

@@ -192,7 +192,7 @@ def list_meetings(
       month: number,
       duration_min: number | null,
       has_transcript: boolean,
-      has_resume: boolean,
+      has_notes: boolean,
       path: string (full path to meeting dir),
       attendees_raw: [{
         name?: string,
@@ -270,7 +270,7 @@ def show(
       month: number,
       duration_min: number | null,
       has_transcript: boolean,
-      has_resume: boolean,
+      has_notes: boolean,
       path: string (full path to meeting dir),
       attendees_raw: [{
         name?: string,
@@ -306,7 +306,7 @@ def show(
     print(f"Duration:   {match.get('duration_min') or '?'} min")
     print(f"Attendees:  {fmt_attendees(match.get('attendees_raw'))}")
     print(f"Transcript: {'yes' if match.get('has_transcript') else 'no'}")
-    print(f"Resume:     {'yes' if match.get('has_resume') else 'no'}")
+    print(f"Notes:     {'yes' if match.get('has_notes') else 'no'}")
     print(f"Path:       {TRANSCRIPTS_ROOT / match.get('dir')}")
 
 
@@ -338,10 +338,12 @@ def transcript(query: str = typer.Argument(..., help="Meeting ID, short ID, or t
         raise typer.Exit(1)
 
 
-@app.command("r")
+@app.command("notes")
+@app.command("n", hidden=True)
+@app.command("r", hidden=True)
 @app.command("resume", hidden=True)
-def resume(query: str = typer.Argument(..., help="Meeting ID, short ID, or title")):
-    """Print meeting notes/resume to stdout."""
+def notes(query: str = typer.Argument(..., help="Meeting ID, short ID, or title")):
+    """Print meeting notes to stdout."""
     data = load_index()
     match = find_meeting(data, query)
     
@@ -350,12 +352,12 @@ def resume(query: str = typer.Argument(..., help="Meeting ID, short ID, or title
         raise typer.Exit(1)
     
     folder = TRANSCRIPTS_ROOT / match.get("dir")
-    resume_file = folder / "resume.md"
+    notes_file = folder / "resume.md"
     
-    if resume_file.exists():
-        print(resume_file.read_text(), end="")
+    if notes_file.exists():
+        print(notes_file.read_text(), end="")
     else:
-        sys.stderr.write("error: no resume available\n")
+        sys.stderr.write("error: no notes available\n")
         raise typer.Exit(1)
 
 
@@ -368,7 +370,7 @@ def stats(
     JSON schema: {
       total: number,
       with_transcript: number,
-      with_resume: number,
+      with_notes: number,
       generated_at: string (ISO 8601),
       by_month: {[YYYY-MM: string]: number}
     }
@@ -378,7 +380,7 @@ def stats(
     
     total = len(meetings)
     with_transcript = sum(1 for m in meetings if m.get("has_transcript"))
-    with_resume = sum(1 for m in meetings if m.get("has_resume"))
+    with_notes = sum(1 for m in meetings if m.get("has_notes"))
     
     by_month = {}
     for m in meetings:
@@ -389,7 +391,7 @@ def stats(
         print(json.dumps({
             "total": total,
             "with_transcript": with_transcript,
-            "with_resume": with_resume,
+            "with_notes": with_notes,
             "generated_at": data.get("generated_at"),
             "by_month": by_month,
         }))
@@ -397,7 +399,7 @@ def stats(
     
     print(f"Total meetings:    {total}")
     print(f"With transcript:   {with_transcript}")
-    print(f"With resume:       {with_resume}")
+    print(f"With notes:       {with_notes}")
     print(f"Index generated:   {data.get('generated_at', '?')}")
     print()
     print("By month:")
