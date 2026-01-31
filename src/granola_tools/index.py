@@ -135,6 +135,15 @@ def extract_duration(doc):
 
 
 def choose_date(meta, doc):
+    # Prefer google calendar event start time
+    if isinstance(doc, dict):
+        gce = doc.get("google_calendar_event")
+        if isinstance(gce, dict):
+            start = gce.get("start", {})
+            if isinstance(start, dict) and start.get("dateTime"):
+                return start["dateTime"]
+    
+    # Fallback to metadata
     if isinstance(meta, dict):
         for key in ("meeting_date", "created_at", "updated_at"):
             val = meta.get(key)
