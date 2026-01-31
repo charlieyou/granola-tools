@@ -37,17 +37,31 @@ def fmt_date(iso_str: Optional[str]) -> str:
         return iso_str[:16]
 
 
-def fmt_attendees(raw: Optional[list]) -> str:
+def fmt_attendees(raw: Optional[list], limit: int = 5) -> str:
+    """Format attendees like calendar: Name <email>"""
     if not raw:
         return ""
-    names = []
-    for a in raw[:5]:
-        name = a.get("name") or a.get("email", "").split("@")[0]
-        if name:
-            names.append(name)
-    result = ", ".join(names)
-    if len(raw) > 5:
-        result += f" +{len(raw)-5}"
+    parts = []
+    for a in raw[:limit]:
+        name = a.get("name") or ""
+        email = a.get("email") or ""
+        # Try to get fullName from details
+        details = a.get("details", {})
+        person = details.get("person", {})
+        name_obj = person.get("name", {})
+        if name_obj.get("fullName"):
+            name = name_obj["fullName"]
+        
+        if name and email:
+            parts.append(f"{name} <{email}>")
+        elif email:
+            parts.append(email)
+        elif name:
+            parts.append(name)
+    
+    result = ", ".join(parts)
+    if len(raw) > limit:
+        result += f" +{len(raw) - limit}"
     return result
 
 
@@ -215,10 +229,10 @@ def list_meetings(
         title = m.get("title") or "(untitled)"
         transcript = "✓" if m.get("has_transcript") else " "
         short_id = m.get("short_id", m.get("id", "")[:7])
-        attendees = fmt_attendees(m.get("attendees_raw"))
+        attendees = fmt_attendees(m.get("attendees_raw"), limit=3)
         print(f"{short_id}  {dt}  [{transcript}]  {title[:50]}")
         if attendees:
-            print(f"         {attendees[:70]}")
+            print(f"         {attendees}")
 
 
 @app.command()
