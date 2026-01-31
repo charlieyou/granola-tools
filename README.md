@@ -7,8 +7,6 @@ Based on [getprobo/reverse-engineering-granola-api](https://github.com/getprobo/
 ## Installation
 
 ```bash
-uv tool install granola-tools
-# or from source
 uv tool install -e .
 ```
 
