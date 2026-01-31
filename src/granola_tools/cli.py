@@ -215,7 +215,10 @@ def list_meetings(
         title = m.get("title") or "(untitled)"
         transcript = "✓" if m.get("has_transcript") else " "
         short_id = m.get("short_id", m.get("id", "")[:7])
-        print(f"{short_id}  {dt}  [{transcript}]  {title[:55]}")
+        attendees = fmt_attendees(m.get("attendees_raw"))
+        print(f"{short_id}  {dt}  [{transcript}]  {title[:50]}")
+        if attendees:
+            print(f"         {attendees[:70]}")
 
 
 @app.command()
