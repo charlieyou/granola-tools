@@ -98,6 +98,26 @@ def extract_duration(doc):
     gce = doc.get("google_calendar_event")
     if not isinstance(gce, dict):
         return None
+    
+    # Try to calculate from start/end times
+    start = gce.get("start", {})
+    end = gce.get("end", {})
+    start_dt = start.get("dateTime") if isinstance(start, dict) else None
+    end_dt = end.get("dateTime") if isinstance(end, dict) else None
+    
+    if start_dt and end_dt:
+        try:
+            from datetime import datetime
+            # Parse ISO format with timezone
+            s = datetime.fromisoformat(start_dt.replace("Z", "+00:00"))
+            e = datetime.fromisoformat(end_dt.replace("Z", "+00:00"))
+            duration_min = int((e - s).total_seconds() / 60)
+            if duration_min > 0:
+                return duration_min
+        except Exception:
+            pass
+    
+    # Fallback: check extendedProperties
     ext = gce.get("extendedProperties")
     if not isinstance(ext, dict):
         return None
