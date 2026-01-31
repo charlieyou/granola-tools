@@ -75,14 +75,11 @@ The path in results contains the meeting UUID — use `granola show <uuid>` for 
 ## Cron
 
 ```bash
-# Sync every 30 minutes
-*/30 * * * * ~/.local/bin/granola sync && ~/.local/bin/granola index
+# Sync every 30 minutes, update qmd index + embeddings
+*/30 * * * * ~/.local/bin/granola sync && ~/.local/bin/granola index && qmd update -c granola && qmd embed -c granola
 ```
 
-After syncing, update qmd index:
-```bash
-qmd update && qmd embed
-```
+`qmd embed` is incremental (content-hash based) — first run is slow, subsequent runs only process new/changed files.
 
 ## Data Location
 
