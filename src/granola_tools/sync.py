@@ -3,13 +3,95 @@ import logging
 from pathlib import Path
 import json
 import os
+import time
 import requests
 from datetime import datetime, timezone
+from functools import wraps
 
 from .token_manager import TokenManager
-from .config import get_granola_home, is_configured
+from .config import get_granola_home, is_configured, load_config
 
 LOG_FILE = get_granola_home() / "sync.log"
+
+# Configurable client version (update when Granola updates)
+DEFAULT_CLIENT_VERSION = "5.354.0"
+
+
+def get_client_version() -> str:
+    """Get client version from config or use default."""
+    config = load_config()
+    return config.get("client_version", DEFAULT_CLIENT_VERSION)
+
+
+def get_headers(token: str) -> dict:
+    """Build API request headers."""
+    version = get_client_version()
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Accept": "*/*",
+        "User-Agent": f"Granola/{version}",
+        "X-Client-Version": version
+    }
+
+
+def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0, backoff_factor: float = 2.0):
+    """Decorator for retrying requests with exponential backoff."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except requests.exceptions.RequestException as e:
+                    last_exception = e
+                    # Don't retry on auth errors
+                    if hasattr(e, 'response') and e.response is not None:
+                        if e.response.status_code in (401, 403):
+                            raise
+                    
+                    if attempt < max_retries - 1:
+                        delay = base_delay * (backoff_factor ** attempt)
+                        logger.warning(f"Request failed (attempt {attempt + 1}/{max_retries}), retrying in {delay:.1f}s: {e}")
+                        time.sleep(delay)
+                    else:
+                        logger.error(f"Request failed after {max_retries} attempts: {e}")
+            raise last_exception
+        return wrapper
+    return decorator
+
+
+class APIResponseError(Exception):
+    """Raised when API response format is unexpected."""
+    pass
+
+
+def validate_documents_response(response: dict) -> list:
+    """Validate and extract documents from API response."""
+    if not isinstance(response, dict):
+        raise APIResponseError(f"Expected dict response, got {type(response).__name__}")
+    
+    if "docs" not in response:
+        raise APIResponseError(f"Missing 'docs' key in response. Keys: {list(response.keys())}")
+    
+    docs = response["docs"]
+    if not isinstance(docs, list):
+        raise APIResponseError(f"Expected 'docs' to be list, got {type(docs).__name__}")
+    
+    return docs
+
+
+def validate_transcript_response(response) -> list | None:
+    """Validate transcript response format."""
+    if response is None:
+        return None
+    
+    if not isinstance(response, list):
+        logger.warning(f"Unexpected transcript format: expected list, got {type(response).__name__}")
+        return None
+    
+    return response
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -89,6 +171,21 @@ def check_config_exists():
         return False
     return True
 
+@retry_with_backoff(max_retries=3)
+def _fetch_documents_page(token: str, offset: int, limit: int) -> dict:
+    """Fetch a single page of documents (with retry)."""
+    url = "https://api.granola.ai/v2/get-documents"
+    headers = get_headers(token)
+    data = {
+        "limit": limit,
+        "offset": offset,
+        "include_last_viewed_panel": True
+    }
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()
+
+
 def fetch_granola_documents(token, limit=100):
     """
     Fetch ALL documents from Granola API with pagination
@@ -100,57 +197,36 @@ def fetch_granola_documents(token, limit=100):
     Returns:
         dict: Combined response with all documents
     """
-    url = "https://api.granola.ai/v2/get-documents"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "Accept": "*/*",
-        "User-Agent": "Granola/5.354.0",
-        "X-Client-Version": "5.354.0"
-    }
-
     all_documents = []
     offset = 0
 
     while True:
-        data = {
-            "limit": limit,
-            "offset": offset,
-            "include_last_viewed_panel": True
-        }
-
         try:
             logger.info(f"Fetching documents: offset={offset}, limit={limit}")
-            response = requests.post(url, headers=headers, json=data)
-            response.raise_for_status()
-            result = response.json()
+            result = _fetch_documents_page(token, offset, limit)
 
             docs = result.get("docs", [])
             if not docs:
-                # No more documents
                 break
 
             all_documents.extend(docs)
             logger.info(f"Fetched {len(docs)} documents (total so far: {len(all_documents)})")
 
-            # If we got fewer documents than the limit, we've reached the end
             if len(docs) < limit:
                 break
 
             offset += limit
 
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching documents at offset {offset}: {str(e)}")
             if offset == 0:
-                # Failed on first request
                 return None
-            else:
-                # Return what we have so far
-                break
+            break
 
     logger.info(f"Total documents fetched: {len(all_documents)}")
     return {"docs": all_documents}
 
+@retry_with_backoff(max_retries=3)
 def fetch_workspaces(token):
     """
     Fetch workspaces from Granola API
@@ -162,22 +238,18 @@ def fetch_workspaces(token):
         dict: Workspaces data or None if failed
     """
     url = "https://api.granola.ai/v1/get-workspaces"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "Accept": "*/*",
-        "User-Agent": "Granola/5.354.0",
-        "X-Client-Version": "5.354.0"
-    }
+    headers = get_headers(token)
 
     try:
         response = requests.post(url, headers=headers, json={})
         response.raise_for_status()
         return response.json()
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching workspaces: {str(e)}")
         return None
 
+
+@retry_with_backoff(max_retries=3)
 def fetch_document_lists(token):
     """
     Fetch document lists (folders) from Granola API
@@ -188,13 +260,7 @@ def fetch_document_lists(token):
     Returns:
         dict: Document lists data or None if failed
     """
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "Accept": "*/*",
-        "User-Agent": "Granola/5.354.0",
-        "X-Client-Version": "5.354.0"
-    }
+    headers = get_headers(token)
 
     # Try v2 endpoint first, then v1
     endpoints = [
@@ -223,6 +289,21 @@ def fetch_document_lists(token):
     logger.warning("All document list endpoints failed")
     return None
 
+@retry_with_backoff(max_retries=3)
+def _fetch_batch_page(token: str, document_ids: list) -> list:
+    """Fetch a single batch of documents (with retry)."""
+    url = "https://api.granola.ai/v1/get-documents-batch"
+    headers = get_headers(token)
+    data = {
+        "document_ids": document_ids,
+        "include_last_viewed_panel": True
+    }
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    result = response.json()
+    return result.get("documents") or result.get("docs") or []
+
+
 def fetch_documents_batch(token, document_ids, batch_size=100):
     """
     Fetch multiple documents by their IDs using the batch endpoint
@@ -242,42 +323,24 @@ def fetch_documents_batch(token, document_ids, batch_size=100):
     Returns:
         list: List of documents (including both owned and shared documents)
     """
-    url = "https://api.granola.ai/v1/get-documents-batch"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "Accept": "*/*",
-        "User-Agent": "Granola/5.354.0",
-        "X-Client-Version": "5.354.0"
-    }
-
     all_documents = []
 
-    # Process in batches
     for i in range(0, len(document_ids), batch_size):
         batch = document_ids[i:i + batch_size]
-        data = {
-            "document_ids": batch,
-            "include_last_viewed_panel": True
-        }
 
         try:
             logger.info(f"Fetching batch {i // batch_size + 1}: {len(batch)} documents")
-            response = requests.post(url, headers=headers, json=data)
-            response.raise_for_status()
-            result = response.json()
-
-            # Handle different response formats
-            docs = result.get("documents") or result.get("docs") or []
+            docs = _fetch_batch_page(token, batch)
             all_documents.extend(docs)
             logger.info(f"Fetched {len(docs)} documents in batch {i // batch_size + 1}")
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching batch at index {i}: {str(e)}")
             continue
 
     logger.info(f"Total documents fetched via batch: {len(all_documents)}/{len(document_ids)}")
     return all_documents
 
+@retry_with_backoff(max_retries=3)
 def fetch_document_transcript(token, document_id):
     """
     Fetch transcript for a specific document
@@ -287,16 +350,10 @@ def fetch_document_transcript(token, document_id):
         document_id: Document ID to fetch transcript for
 
     Returns:
-        dict: Transcript data or None if failed
+        list: Transcript data (list of utterances) or None if not found
     """
     url = "https://api.granola.ai/v1/get-document-transcript"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-        "Accept": "*/*",
-        "User-Agent": "Granola/5.354.0",
-        "X-Client-Version": "5.354.0"
-    }
+    headers = get_headers(token)
     data = {
         "document_id": document_id
     }
@@ -304,7 +361,8 @@ def fetch_document_transcript(token, document_id):
     try:
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        return validate_transcript_response(result)
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             logger.debug(f"No transcript found for document {document_id}")
@@ -530,14 +588,13 @@ def run_sync(output_dir: str, full: bool = False):
     if not api_response:
         logger.error("Failed to fetch documents - API response is empty")
         return
-        
-    if "docs" not in api_response:
-        logger.error("API response format is unexpected - 'docs' key not found")
-        logger.debug(f"API Response: {api_response}")
+    
+    try:
+        documents = validate_documents_response(api_response)
+    except APIResponseError as e:
+        logger.error(f"API response format error: {e}")
         return
 
-
-    documents = api_response["docs"]
     logger.info(f"Successfully fetched {len(documents)} documents from Granola")
     
     if not documents:

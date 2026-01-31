@@ -2,6 +2,9 @@
 
 CLI for syncing and searching Granola meeting transcripts locally.
 
+> **Compatibility:** macOS only. Tested with Granola v5.354.0 (January 2026).
+> This tool uses Granola's internal API which may change without notice.
+
 ## Installation
 
 ```bash
