@@ -15,8 +15,8 @@ try:
 except Exception:  # pragma: no cover
     ZoneInfo = None
 
-ROOT = Path(os.getenv("GRANOLA_TRANSCRIPTS_PATH", "~/Documents/granola-transcripts")).expanduser()
-OUT = Path(os.getenv("GRANOLA_INDEX_PATH", "~/Documents/granola-search/state/index.json")).expanduser()
+ROOT = Path(os.getenv("GRANOLA_TRANSCRIPTS_PATH", "~/.granola/transcripts")).expanduser()
+OUT = Path(os.getenv("GRANOLA_INDEX_PATH", "~/.granola/index/index.json")).expanduser()
 SCHEMA_VERSION = 1
 LOCAL_TZ = os.getenv("GRANOLA_TIMEZONE", "America/New_York")
 

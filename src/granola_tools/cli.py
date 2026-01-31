@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-INDEX_PATH = Path(os.getenv("GRANOLA_INDEX_PATH", "~/Documents/granola-search/state/index.json")).expanduser()
-TRANSCRIPTS_ROOT = Path(os.getenv("GRANOLA_TRANSCRIPTS_PATH", "~/Documents/granola-transcripts")).expanduser()
+INDEX_PATH = Path(os.getenv("GRANOLA_INDEX_PATH", "~/.granola/index/index.json")).expanduser()
+TRANSCRIPTS_ROOT = Path(os.getenv("GRANOLA_TRANSCRIPTS_PATH", "~/.granola/transcripts")).expanduser()
 
 
 def load_index():
