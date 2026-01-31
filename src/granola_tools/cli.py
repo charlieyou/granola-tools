@@ -14,8 +14,9 @@ load_dotenv()
 
 app = typer.Typer(help="Granola meeting search CLI")
 
-INDEX_PATH = Path(os.getenv("GRANOLA_INDEX_PATH", "~/.granola/index/index.json")).expanduser()
-TRANSCRIPTS_ROOT = Path(os.getenv("GRANOLA_TRANSCRIPTS_PATH", "~/.granola/transcripts")).expanduser()
+GRANOLA_HOME = Path(os.getenv("GRANOLA_HOME", "~/.granola")).expanduser()
+INDEX_PATH = GRANOLA_HOME / "index" / "index.json"
+TRANSCRIPTS_ROOT = GRANOLA_HOME / "transcripts"
 
 
 def load_index():

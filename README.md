@@ -16,10 +16,9 @@ Create a `.env` file:
 
 ```bash
 GRANOLA_REFRESH_TOKEN=your_refresh_token
-GRANOLA_CLIENT_ID=client_your_client_id
-# Optional - defaults to ~/.granola/
-GRANOLA_TRANSCRIPTS_PATH=~/.granola/transcripts
-GRANOLA_INDEX_PATH=~/.granola/index/index.json
+GRANOLA_CLIENT_ID=your_client_id
+# Optional - defaults to ~/.granola
+GRANOLA_HOME=~/.granola
 ```
 
 See `docs/GETTING_REFRESH_TOKEN.md` for token setup.
