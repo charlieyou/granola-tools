@@ -37,12 +37,12 @@ def fmt_date(iso_str: Optional[str]) -> str:
         return iso_str[:16]
 
 
-def fmt_attendees(raw: Optional[list], limit: int = 5) -> str:
+def fmt_attendees(raw: Optional[list]) -> str:
     """Format attendees like calendar: Name <email>"""
     if not raw:
         return ""
     parts = []
-    for a in raw[:limit]:
+    for a in raw:
         name = a.get("name") or ""
         email = a.get("email") or ""
         # Try to get fullName from details
@@ -59,10 +59,7 @@ def fmt_attendees(raw: Optional[list], limit: int = 5) -> str:
         elif name:
             parts.append(name)
     
-    result = ", ".join(parts)
-    if len(raw) > limit:
-        result += f" +{len(raw) - limit}"
-    return result
+    return ", ".join(parts)
 
 
 def get_attendee_strings(m: dict) -> list[str]:
@@ -229,7 +226,7 @@ def list_meetings(
         title = m.get("title") or "(untitled)"
         transcript = "✓" if m.get("has_transcript") else " "
         short_id = m.get("short_id", m.get("id", "")[:7])
-        attendees = fmt_attendees(m.get("attendees_raw"), limit=3)
+        attendees = fmt_attendees(m.get("attendees_raw"))
         print(f"{short_id}  {dt}  [{transcript}]  {title[:50]}")
         if attendees:
             print(f"         {attendees}")
