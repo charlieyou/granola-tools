@@ -51,3 +51,20 @@ granola ls --last 7d -a Adam --json | jq -r '.[].short_id' | xargs -I{} granola 
 ```
 
 Fields: `id`, `short_id`, `title`, `date_utc`, `date_local`, `date_short`, `duration_min`, `path`, `transcript_path`, `notes_path`, `has_transcript`, `has_notes`, `attendees_raw`
+
+## CRITICAL: Working with transcripts
+
+**NEVER output transcript content directly to the conversation.** Transcripts are extremely long and will destroy context.
+
+**ALWAYS follow this process:**
+
+1. Save transcript to file FIRST:
+```bash
+granola t <id> > /tmp/transcript_<id>.md
+```
+
+2. Spawn a Task subagent to read the file and extract ONLY what the user requested (action items, decisions, summaries, specific topics, etc.)
+
+3. Return the subagent's extracted results—NOT the raw transcript.
+
+This is mandatory. No exceptions.
