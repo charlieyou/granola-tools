@@ -88,8 +88,8 @@ class TokenManager:
             return False
 
     def get_valid_token(self):
-        if self.is_token_expired():
-            if not self.refresh_access_token():
-                logger.error("Failed to obtain access token")
-                return None
+        # Always refresh to keep session alive (refresh tokens may expire from inactivity)
+        if not self.refresh_access_token():
+            logger.error("Failed to obtain access token")
+            return None
         return self.access_token
