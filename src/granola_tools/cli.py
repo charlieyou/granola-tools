@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
 """Granola meeting search CLI."""
 import json
-import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
 import typer
-from dotenv import load_dotenv
 
-load_dotenv()
+from .config import get_granola_home, is_configured, setup_interactive
 
 app = typer.Typer(help="CLI for Granola meeting transcripts", add_completion=False)
 
-GRANOLA_HOME = Path(os.getenv("GRANOLA_HOME", "~/.granola")).expanduser()
-INDEX_PATH = GRANOLA_HOME / "index" / "index.json"
-TRANSCRIPTS_ROOT = GRANOLA_HOME / "transcripts"
+
+def get_paths():
+    """Get paths based on current config."""
+    home = get_granola_home()
+    return home / "index" / "index.json", home / "transcripts"
+
+
+INDEX_PATH, TRANSCRIPTS_ROOT = get_paths()
 
 
 def load_index():
@@ -408,11 +411,27 @@ def stats(
 
 
 @app.command()
+def init():
+    """Set up granola-tools (first-time setup)."""
+    if is_configured():
+        print("Already configured. Run 'granola sync' to sync meetings.")
+        print(f"Config: {get_granola_home() / 'config.json'}")
+        raise typer.Exit(0)
+    
+    success = setup_interactive()
+    raise typer.Exit(0 if success else 1)
+
+
+@app.command()
 def sync(
     output_dir: Optional[str] = typer.Argument(None, help="Output directory"),
     full: bool = typer.Option(False, "--full", help="Force full sync (ignore incremental state)"),
 ):
     """Sync meetings from Granola API."""
+    if not is_configured():
+        sys.stderr.write("error: not configured. Run 'granola init' first.\n")
+        raise typer.Exit(1)
+    
     from .sync import run_sync
     run_sync(output_dir or str(TRANSCRIPTS_ROOT), full=full)
 

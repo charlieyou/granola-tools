@@ -1,40 +1,33 @@
+"""Token management for Granola API authentication."""
 import logging
-import os
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import requests
-from dotenv import load_dotenv, set_key
+
+from .config import load_config, save_config
 
 logger = logging.getLogger(__name__)
-
-# Load .env from repo root or home
-ENV_FILE = Path(__file__).parent.parent.parent / ".env"
-if not ENV_FILE.exists():
-    ENV_FILE = Path.home() / ".config" / "granola" / ".env"
-
-load_dotenv(ENV_FILE)
 
 
 class TokenManager:
     def __init__(self):
-        self.refresh_token = os.getenv("GRANOLA_REFRESH_TOKEN")
-        self.client_id = os.getenv("GRANOLA_CLIENT_ID")
-        self.access_token = os.getenv("GRANOLA_ACCESS_TOKEN")
-        expiry_str = os.getenv("GRANOLA_TOKEN_EXPIRY")
+        config = load_config()
+        self.refresh_token = config.get("refresh_token")
+        self.client_id = config.get("client_id")
+        self.access_token = config.get("access_token")
+        expiry_str = config.get("token_expiry")
         self.token_expiry = datetime.fromisoformat(expiry_str) if expiry_str else None
 
-    def _save_env(self):
-        """Save tokens back to .env file."""
+    def _save_tokens(self):
+        """Save tokens back to config file."""
         try:
-            if not ENV_FILE.parent.exists():
-                ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
-            
-            set_key(str(ENV_FILE), "GRANOLA_REFRESH_TOKEN", self.refresh_token or "")
-            set_key(str(ENV_FILE), "GRANOLA_ACCESS_TOKEN", self.access_token or "")
+            config = load_config()
+            config["refresh_token"] = self.refresh_token or ""
+            config["access_token"] = self.access_token or ""
             if self.token_expiry:
-                set_key(str(ENV_FILE), "GRANOLA_TOKEN_EXPIRY", self.token_expiry.isoformat())
-            logger.debug(f"Tokens saved to {ENV_FILE}")
+                config["token_expiry"] = self.token_expiry.isoformat()
+            save_config(config)
+            logger.debug("Tokens saved to config")
         except Exception as e:
             logger.error(f"Error saving tokens: {e}")
 
@@ -48,11 +41,11 @@ class TokenManager:
         logger.info("Obtaining new access token from refresh token...")
 
         if not self.refresh_token:
-            logger.error("No GRANOLA_REFRESH_TOKEN in environment")
+            logger.error("No refresh_token in config. Run 'granola init' to set up.")
             return False
 
         if not self.client_id:
-            logger.error("No GRANOLA_CLIENT_ID in environment")
+            logger.error("No client_id in config. Run 'granola init' to set up.")
             return False
 
         url = "https://api.workos.com/user_management/authenticate"
@@ -77,7 +70,7 @@ class TokenManager:
             expires_in = result.get("expires_in", 3600)
             self.token_expiry = datetime.now() + timedelta(seconds=expires_in)
 
-            self._save_env()
+            self._save_tokens()
             logger.info(f"Successfully obtained access token (expires in {expires_in}s)")
             return True
 

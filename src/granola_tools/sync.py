@@ -6,12 +6,10 @@ import os
 import requests
 from datetime import datetime, timezone
 
-from dotenv import load_dotenv
 from .token_manager import TokenManager
+from .config import get_granola_home, is_configured
 
-load_dotenv()
-
-LOG_FILE = Path(os.getenv("GRANOLA_LOG_FILE", "granola_sync.log"))
+LOG_FILE = get_granola_home() / "sync.log"
 
 logging.basicConfig(
     level=logging.DEBUG,

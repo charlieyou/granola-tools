@@ -6,16 +6,14 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-load_dotenv()
+from .config import get_granola_home
 
 try:
     from zoneinfo import ZoneInfo
 except Exception:  # pragma: no cover
     ZoneInfo = None
 
-GRANOLA_HOME = Path(os.getenv("GRANOLA_HOME", "~/.granola")).expanduser()
+GRANOLA_HOME = get_granola_home()
 ROOT = GRANOLA_HOME / "transcripts"
 OUT = GRANOLA_HOME / "index" / "index.json"
 SCHEMA_VERSION = 1

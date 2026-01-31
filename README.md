@@ -12,26 +12,21 @@ cd granola-tools
 uv tool install -e .
 ```
 
-## Configuration
+## Setup
 
-Create a `.env` file in the repo or `~/.config/granola/.env`:
-
-```bash
-GRANOLA_REFRESH_TOKEN=your_refresh_token
-GRANOLA_CLIENT_ID=your_client_id
-# Optional - defaults to ~/.granola
-GRANOLA_HOME=~/.granola
-```
-
-To get tokens, extract from `~/Library/Application Support/Granola/supabase.json` after logging into Granola:
+First-time setup (extracts credentials from Granola app automatically):
 
 ```bash
-# Extract refresh token
-cat ~/Library/Application\ Support/Granola/supabase.json | jq -r '.workos_tokens | fromjson | .refresh_token'
-
-# Extract client_id from JWT
-cat ~/Library/Application\ Support/Granola/supabase.json | jq -r '.workos_tokens | fromjson | .access_token' | cut -d. -f2 | base64 -d 2>/dev/null | jq -r '.iss' | grep -o 'client_[^"]*'
+granola init
 ```
+
+This will:
+1. Ask where to store data (default: `~/.granola`)
+2. Create necessary directories
+3. Extract credentials from the Granola app
+4. Perform initial sync
+
+**Prerequisite:** Sign into the Granola desktop app first.
 
 ## Usage
 
