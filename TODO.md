@@ -1,0 +1,1 @@
+- Currently QMD searches all transcripts. Should be able to pre-filter by date, attendees, title, before searching. This will require adding filter functionality to QMD, or rebuilding QMD's search capabilities in my own lib
