@@ -162,9 +162,9 @@ def setup_interactive() -> bool:
     
     # Perform first sync
     print("\nPerforming initial sync...")
-    from .sync import main as sync_main
+    from .sync import run_sync
     try:
-        sync_main()
+        run_sync(str(granola_home / "transcripts"))
         print("\n✓ Setup complete!")
         return True
     except Exception as e:
