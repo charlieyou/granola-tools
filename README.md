@@ -99,10 +99,10 @@ granola stats --json
 ```
 $ granola ls -n 2
 e9053e5  2026-01-30 14:00  (15 min)  Standup
-  Pasha <pasha@rwa.xyz>, Devang Patel <devang@rwa.xyz>, Adam Lawrence <adam@rwa.xyz>
+  Alice <alice@example.com>, Bob <bob@example.com>
 
-0b23dc5  2026-01-29 14:00  (15 min)  Standup
-  Pasha <pasha@rwa.xyz>, Devang Patel <devang@rwa.xyz>, Adam Lawrence <adam@rwa.xyz>
+0b23dc5  2026-01-29 14:00  (15 min)  Weekly Sync
+  Alice <alice@example.com>, Charlie <charlie@example.com>
 ```
 
 ## Search with qmd
