@@ -85,7 +85,28 @@ def list_meetings(
 ):
     """List recent meetings.
     
-    JSON schema: [{id, short_id, title, date_utc, date_local, date_short, year, month, duration_min, has_transcript, has_resume, path, attendees_raw}]
+    JSON schema: [{
+      id: string,
+      short_id: string,
+      title: string,
+      date_utc: string (ISO 8601),
+      date_local: string (ISO 8601),
+      date_short: string (YYYY-MM-DD),
+      year: number,
+      month: number,
+      duration_min: number | null,
+      has_transcript: boolean,
+      has_resume: boolean,
+      path: string (full path to meeting dir),
+      attendees_raw: [{
+        name?: string,
+        email: string,
+        details?: {
+          person?: {name?: {fullName, givenName?, familyName?}, avatar?: string, employment?: {name, title}, linkedin?: {handle}},
+          company?: {name?: string}
+        }
+      }]
+    }]
     """
     data = load_index()
     meetings = data["meetings"]
@@ -147,7 +168,28 @@ def show(
 ):
     """Show meeting details.
     
-    JSON schema: {id, short_id, title, date_utc, date_local, date_short, year, month, duration_min, has_transcript, has_resume, path, attendees_raw}
+    JSON schema: {
+      id: string,
+      short_id: string,
+      title: string,
+      date_utc: string (ISO 8601),
+      date_local: string (ISO 8601),
+      date_short: string (YYYY-MM-DD),
+      year: number,
+      month: number,
+      duration_min: number | null,
+      has_transcript: boolean,
+      has_resume: boolean,
+      path: string (full path to meeting dir),
+      attendees_raw: [{
+        name?: string,
+        email: string,
+        details?: {
+          person?: {name?: {fullName, givenName?, familyName?}, avatar?: string, employment?: {name, title}, linkedin?: {handle}},
+          company?: {name?: string}
+        }
+      }]
+    }
     """
     data = load_index()
     match = find_meeting(data, query)
@@ -227,7 +269,13 @@ def stats(
 ):
     """Show index statistics.
     
-    JSON schema: {total, with_transcript, with_resume, generated_at, by_month: {YYYY-MM: count}}
+    JSON schema: {
+      total: number,
+      with_transcript: number,
+      with_resume: number,
+      generated_at: string (ISO 8601),
+      by_month: {[YYYY-MM: string]: number}
+    }
     """
     data = load_index()
     meetings = data["meetings"]
