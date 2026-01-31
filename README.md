@@ -111,7 +111,7 @@ For full-text and semantic search across transcripts, use [qmd](https://github.c
 
 ```bash
 # One-time setup
-qmd collection add ~/.granola/transcripts --name granola --mask "**/*.md"
+qmd collection add ~/.granola/transcripts --name granola --mask "**/transcript.md"
 qmd embed  # generate vector embeddings
 
 # Search
