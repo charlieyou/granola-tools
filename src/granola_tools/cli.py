@@ -221,15 +221,22 @@ def list_meetings(
     if not meetings:
         return  # No output for empty results (Unix convention)
     
-    for m in meetings:
+    for i, m in enumerate(meetings):
+        if i > 0:
+            print()  # blank line between meetings
+        
         dt = fmt_date(m.get("date_local") or m.get("date_utc"))
         title = m.get("title") or "(untitled)"
-        transcript = "✓" if m.get("has_transcript") else " "
         short_id = m.get("short_id", m.get("id", "")[:7])
         attendees = fmt_attendees(m.get("attendees_raw"))
-        print(f"{short_id}  {dt}  [{transcript}]  {title[:50]}")
+        
+        has_t = "✓" if m.get("has_transcript") else "✗"
+        has_r = "✓" if m.get("has_resume") else "✗"
+        
+        print(f"{short_id}  {title}")
+        print(f"  {dt}  transcript:{has_t}  notes:{has_r}")
         if attendees:
-            print(f"         {attendees}")
+            print(f"  {attendees}")
 
 
 @app.command()
