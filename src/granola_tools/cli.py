@@ -29,7 +29,7 @@ def fmt_date(iso_str):
     try:
         dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
         return dt.strftime("%Y-%m-%d %H:%M")
-    except:
+    except (ValueError, AttributeError):
         return iso_str[:16]
 
 
@@ -230,7 +230,7 @@ def cmd_stats(args):
     # By month
     by_month = {}
     for m in meetings:
-        key = f"{m.get('year')}-{m.get('month'):02d}" if m.get("year") else "unknown"
+        key = f"{m.get('year')}-{m.get('month'):02d}" if m.get("year") and m.get("month") else "unknown"
         by_month[key] = by_month.get(key, 0) + 1
     
     print(f"Total meetings:    {total}")
@@ -306,7 +306,6 @@ def cmd_sync(args):
 def cmd_index(args):
     from .index import build_index
     build_index()
-    print("Index rebuilt.")
 
 
 if __name__ == "__main__":

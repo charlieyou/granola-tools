@@ -386,21 +386,12 @@ def convert_transcript_to_markdown(transcript_data):
             try:
                 dt = datetime.fromisoformat(start_timestamp.replace('Z', '+00:00'))
                 timestamp_str = f"[{dt.strftime('%H:%M:%S')}]"
-            except:
+            except (ValueError, AttributeError):
                 timestamp_str = ""
         
         markdown.append(f"**{speaker}** {timestamp_str}\n\n{text}\n\n")
     
     return ''.join(markdown)
-
-def sanitize_filename(title):
-    """
-    Convert a title to a valid filename
-    """
-    invalid_chars = '<>:"/\\|?*'
-    filename = ''.join(c for c in title if c not in invalid_chars)
-    filename = filename.replace(' ', '_')
-    return filename
 
 def run_sync(output_dir: str, full: bool = False):
     """Run the sync process."""

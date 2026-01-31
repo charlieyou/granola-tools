@@ -212,6 +212,7 @@ def build_index():
         "meetings": meetings,
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=True, separators=(",", ":")))
+    print(f"Indexed {len(meetings)} meetings to {OUT}")
 
 
 if __name__ == "__main__":
