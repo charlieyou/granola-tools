@@ -3,6 +3,7 @@ name = "granola-tools"
 version = "0.1.0"
 description = "CLI for searching and managing Granola meeting transcripts"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
     "requests>=2.28.0",
