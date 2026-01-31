@@ -55,18 +55,21 @@ granola ls -m 2024-01             # Specific month
 granola ls --since 2024-01-01 --until 2024-01-31
 
 # Filter by attendee (partial match on name/email)
-granola ls -a Adam
-granola ls --attendee bryan@example.com
+granola ls -a Charlie
+granola ls --attendee charlie@example.com
 
 # Fuzzy search by title (all words must match)
 granola ls -t "data sync"
 granola ls -t standup --last 7d
 
 # Combine filters
-granola ls --last 30d -a Adam -t sync -n 5
+granola ls --last 30d -a Charlie -t sync -n 5
 
 # JSON output for scripting
 granola ls --json | jq '.[0].title'
+
+# Print all transcripts from a search
+granola ls --last 7d -a Charlie --json | jq -r '.[].short_id' | xargs -I{} granola t {}
 ```
 
 ### View Meetings
