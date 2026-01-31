@@ -130,41 +130,6 @@ def list_meetings(
         typer.echo(f"{short_id}  {dt}  [{transcript}]  {title[:55]}")
 
 
-@app.command("s")
-@app.command("search", hidden=True)
-def search_meetings(
-    query: str = typer.Argument(..., help="Search query"),
-    limit: int = typer.Option(20, "-n", "--limit", help="Max results"),
-):
-    """Search meetings by title or attendee."""
-    data = load_index()
-    query_lower = query.lower()
-    
-    results = []
-    for m in data["meetings"]:
-        title = (m.get("title") or "").lower()
-        attendees = fmt_attendees(m.get("attendees_raw")).lower()
-        if query_lower in title or query_lower in attendees:
-            results.append(m)
-    
-    results = sorted(results, key=lambda m: m.get("date_utc") or "", reverse=True)[:limit]
-    
-    if not results:
-        typer.echo("No matches found.")
-        return
-    
-    for m in results:
-        dt = fmt_date(m.get("date_local") or m.get("date_utc"))
-        title = m.get("title") or "(untitled)"
-        attendees = fmt_attendees(m.get("attendees_raw"))
-        transcript = "✓" if m.get("has_transcript") else " "
-        short_id = m.get("short_id", m.get("id", "")[:7])
-        typer.echo(f"{short_id}  {dt}  [{transcript}]  {title[:45]}")
-        if attendees:
-            typer.echo(f"                     {attendees[:55]}")
-        typer.echo()
-
-
 @app.command()
 def show(query: str = typer.Argument(..., help="Meeting title or ID")):
     """Show meeting details."""

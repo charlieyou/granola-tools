@@ -1,18 +1,20 @@
 # Granola Tools
 
-CLI for syncing and searching Granola meeting transcripts.
+CLI for syncing and browsing Granola meeting transcripts.
 
 Based on [getprobo/reverse-engineering-granola-api](https://github.com/getprobo/reverse-engineering-granola-api).
 
 ## Installation
 
 ```bash
+uv tool install granola-tools
+# or from source
 uv tool install -e .
 ```
 
 ## Configuration
 
-Create a `.env` file:
+Create a `.env` file in the repo or `~/.config/granola/.env`:
 
 ```bash
 GRANOLA_REFRESH_TOKEN=your_refresh_token
@@ -27,35 +29,70 @@ See `docs/GETTING_REFRESH_TOKEN.md` for token setup.
 
 ```bash
 # Sync meetings from Granola API
-granola-sync ~/Documents/granola-transcripts
+granola sync
+
+# Rebuild local index
+granola index
 
 # List recent meetings
 granola ls
 granola ls -n 50
 granola ls --today
+granola ls --yesterday
 granola ls --last 7d
 granola ls -d 2024-01-15
 granola ls --since 2024-01-01 --until 2024-01-31
 
-# Search meetings
-granola search "keyword"
-granola search "person name"
-
 # Show meeting details
-granola show <short_id>
+granola show <id>
 granola show "meeting title"
 
 # View transcript or notes
-granola transcript <short_id>
-granola resume <short_id>
+granola t <id>      # transcript
+granola r <id>      # resume/notes
 
 # Stats
 granola stats
 ```
 
-## Cron Setup
+## Search with qmd
+
+For full-text and semantic search, use [qmd](https://github.com/tobi/qmd):
 
 ```bash
-# Run every 30 minutes
-*/30 * * * * ~/code/granola-tools/sync_and_index.sh >> ~/code/granola-tools/cron.log 2>&1
+# One-time setup
+qmd collection add ~/.granola/transcripts --name granola --mask "**/*.md"
+qmd embed  # generate vector embeddings
+
+# Search
+qmd search "pricing discussion" -c granola          # BM25 full-text
+qmd vsearch "what did we decide about X" -c granola # semantic
+qmd query "action items from last standup" -c granola # hybrid + reranking
+```
+
+The path in results contains the meeting UUID — use `granola show <uuid>` for metadata.
+
+## Cron
+
+```bash
+# Sync every 30 minutes
+*/30 * * * * ~/.local/bin/granola sync && ~/.local/bin/granola index
+```
+
+After syncing, update qmd index:
+```bash
+qmd update && qmd embed
+```
+
+## Data Location
+
+```
+~/.granola/
+├── index/
+│   └── index.json      # Meeting metadata index
+└── transcripts/
+    └── <uuid>/         # Per-meeting folder
+        ├── metadata.json
+        ├── transcript.md
+        └── resume.md
 ```
