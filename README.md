@@ -1,8 +1,6 @@
 # Granola Tools
 
-CLI for syncing and browsing Granola meeting transcripts.
-
-Based on [getprobo/reverse-engineering-granola-api](https://github.com/getprobo/reverse-engineering-granola-api).
+CLI for syncing and searching Granola meeting transcripts locally.
 
 ## Installation
 
@@ -14,7 +12,7 @@ uv tool install -e .
 
 ## Setup
 
-First-time setup (extracts credentials from Granola app automatically):
+**Prerequisite:** Sign into the [Granola](https://granola.ai) desktop app first.
 
 ```bash
 granola init
@@ -26,7 +24,7 @@ This will:
 3. Extract credentials from the Granola app
 4. Perform initial sync
 
-**Prerequisite:** Sign into the Granola desktop app first.
+Config is stored in `~/.granola/config.json`.
 
 ## Usage
 
@@ -55,7 +53,7 @@ granola ls --since 2024-01-01 --until 2024-01-31
 
 # Filter by attendee (partial match on name/email)
 granola ls -a Adam
-granola ls --attendee bryan@rwa.xyz
+granola ls --attendee bryan@example.com
 
 # Fuzzy search by title (all words must match)
 granola ls -t "data sync"
@@ -100,6 +98,28 @@ e9053e5  2026-01-30 14:00  (15 min)  Standup
   Alice <alice@example.com>, Charlie <charlie@example.com>
 ```
 
+## JSON Schema
+
+Each meeting in `granola ls --json` includes:
+
+```json
+{
+  "id": "e9053e52-d939-406f-8284-b04652d28bb3",
+  "short_id": "e9053e5",
+  "title": "Standup",
+  "date_utc": "2026-01-30T19:00:00Z",
+  "date_local": "2026-01-30T14:00:00-05:00",
+  "date_short": "2026-01-30",
+  "duration_min": 15,
+  "path": "/Users/you/.granola/transcripts/e9053e52-...",
+  "transcript_path": "/Users/you/.granola/transcripts/e9053e52-.../transcript.md",
+  "notes_path": "/Users/you/.granola/transcripts/e9053e52-.../resume.md",
+  "has_transcript": true,
+  "has_notes": true,
+  "attendees_raw": [...]
+}
+```
+
 ## Search with qmd
 
 For full-text and semantic search across transcripts, use [qmd](https://github.com/tobi/qmd):
@@ -120,18 +140,18 @@ The path in results contains the meeting UUID — use `granola show <uuid>` for 
 ## Cron
 
 ```bash
-# Sync every 30 minutes, update qmd index + embeddings
-*/30 * * * * ~/.local/bin/granola sync && ~/.local/bin/granola index && qmd update -c granola && qmd embed -c granola
+# Sync every 30 minutes
+*/30 * * * * ~/.local/bin/granola sync && ~/.local/bin/granola index
 ```
 
-**Important:** Cron must run at least every hour. The refresh token is rotated on each sync to keep the session alive — if it's not used within ~1 hour, it expires and you'll need to re-extract tokens from Granola.
-
-`qmd embed` is incremental (content-hash based) — first run is slow, subsequent runs only process new/changed files.
+**Important:** Cron should run at least every hour. The refresh token is rotated on each sync — if unused for too long, it may expire and require re-running `granola init`.
 
 ## Data Location
 
 ```
 ~/.granola/
+├── config.json         # Credentials & settings
+├── sync.log            # Sync log
 ├── index/
 │   └── index.json      # Meeting metadata index
 └── transcripts/
@@ -140,5 +160,9 @@ The path in results contains the meeting UUID — use `granola show <uuid>` for 
         ├── metadata.json
         ├── transcript.md
         ├── transcript.json
-        └── resume.md
+        └── resume.md   # Notes
 ```
+
+## Credits
+
+Based on [getprobo/reverse-engineering-granola-api](https://github.com/getprobo/reverse-engineering-granola-api).
