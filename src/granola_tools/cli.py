@@ -83,7 +83,10 @@ def list_meetings(
     last: Optional[str] = typer.Option(None, "--last", help="Last N days (e.g. 7d)"),
     output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ):
-    """List recent meetings."""
+    """List recent meetings.
+    
+    JSON schema: [{id, short_id, title, date_utc, date_local, date_short, year, month, duration_min, has_transcript, has_resume, path, attendees_raw}]
+    """
     data = load_index()
     meetings = data["meetings"]
     
@@ -142,7 +145,10 @@ def show(
     query: str = typer.Argument(..., help="Meeting title or ID"),
     output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ):
-    """Show meeting details."""
+    """Show meeting details.
+    
+    JSON schema: {id, short_id, title, date_utc, date_local, date_short, year, month, duration_min, has_transcript, has_resume, path, attendees_raw}
+    """
     data = load_index()
     match = find_meeting(data, query)
     
@@ -219,7 +225,10 @@ def resume(query: str = typer.Argument(..., help="Meeting title or ID")):
 def stats(
     output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ):
-    """Show index statistics."""
+    """Show index statistics.
+    
+    JSON schema: {total, with_transcript, with_resume, generated_at, by_month: {YYYY-MM: count}}
+    """
     data = load_index()
     meetings = data["meetings"]
     
