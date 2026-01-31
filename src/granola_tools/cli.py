@@ -229,12 +229,10 @@ def list_meetings(
         title = m.get("title") or "(untitled)"
         short_id = m.get("short_id", m.get("id", "")[:7])
         attendees = fmt_attendees(m.get("attendees_raw"))
+        duration = m.get("duration_min")
+        duration_str = f"  ({duration} min)" if duration else ""
         
-        has_t = "✓" if m.get("has_transcript") else "✗"
-        has_r = "✓" if m.get("has_resume") else "✗"
-        
-        print(f"{short_id}  {title}")
-        print(f"  {dt}  transcript:{has_t}  notes:{has_r}")
+        print(f"{short_id}  {dt}{duration_str}  {title}")
         if attendees:
             print(f"  {attendees}")
 
