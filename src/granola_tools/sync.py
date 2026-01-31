@@ -402,14 +402,11 @@ def sanitize_filename(title):
     filename = filename.replace(' ', '_')
     return filename
 
-def main():
+def run_sync(output_dir: str, full: bool = False):
+    """Run the sync process."""
     logger.info("Starting Granola sync process")
-    parser = argparse.ArgumentParser(description="Fetch Granola notes and save them as Markdown files in an Obsidian folder.")
-    parser.add_argument("output_dir", type=str, help="The full path to the Obsidian subfolder where notes should be saved.")
-    parser.add_argument("--full", action="store_true", help="Force full sync (ignore incremental state)")
-    args = parser.parse_args()
-
-    output_path = Path(args.output_dir)
+    
+    output_path = Path(output_dir).expanduser()
     logger.info(f"Output directory set to: {output_path}")
     
     if not output_path.is_dir():
@@ -418,7 +415,7 @@ def main():
         return
 
     # Load sync state for incremental sync
-    if args.full:
+    if full:
         logger.info("Full sync requested - ignoring previous sync state")
         sync_state = {"documents": {}, "last_sync": None}
     else:
@@ -681,6 +678,16 @@ def main():
     logger.info(f"  - Skipped (in-progress/unended): {skipped_in_progress}")
     logger.info(f"  - Skipped (unchanged): {skipped_unchanged}")
     logger.info(f"  - Output: '{output_path}'")
+
+
+def main():
+    """CLI entry point."""
+    parser = argparse.ArgumentParser(description="Sync Granola meetings")
+    parser.add_argument("output_dir", type=str, help="Output directory for transcripts")
+    parser.add_argument("--full", action="store_true", help="Force full sync")
+    args = parser.parse_args()
+    run_sync(args.output_dir, full=args.full)
+
 
 if __name__ == "__main__":
     main()

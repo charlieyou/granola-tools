@@ -11,7 +11,6 @@ dependencies = [
 
 [project.scripts]
 granola = "granola_tools.cli:main"
-granola-sync = "granola_tools.sync:main"
 
 [build-system]
 requires = ["hatchling"]

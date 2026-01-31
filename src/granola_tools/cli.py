@@ -284,8 +284,29 @@ def main():
     p_stats = subparsers.add_parser("stats", help="Show index statistics")
     p_stats.set_defaults(func=cmd_stats)
     
+    # sync
+    p_sync = subparsers.add_parser("sync", help="Sync meetings from Granola API")
+    p_sync.add_argument("output_dir", nargs="?", default=str(TRANSCRIPTS_ROOT), help="Output directory")
+    p_sync.add_argument("--full", action="store_true", help="Force full sync")
+    p_sync.set_defaults(func=cmd_sync)
+    
+    # index
+    p_index = subparsers.add_parser("index", help="Rebuild search index")
+    p_index.set_defaults(func=cmd_index)
+    
     args = parser.parse_args()
     args.func(args)
+
+
+def cmd_sync(args):
+    from .sync import run_sync
+    run_sync(args.output_dir, full=args.full)
+
+
+def cmd_index(args):
+    from .index import build_index
+    build_index()
+    print("Index rebuilt.")
 
 
 if __name__ == "__main__":
