@@ -81,6 +81,7 @@ def list_meetings(
     since: Optional[str] = typer.Option(None, "--since", help="From date (YYYY-MM-DD)"),
     until: Optional[str] = typer.Option(None, "--until", help="To date (YYYY-MM-DD)"),
     last: Optional[str] = typer.Option(None, "--last", help="Last N days (e.g. 7d)"),
+    output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ):
     """List recent meetings."""
     data = load_index()
@@ -118,6 +119,10 @@ def list_meetings(
     if limit and not (date or today or yesterday or since or until or last):
         meetings = meetings[:limit]
     
+    if output_json:
+        print(json.dumps(meetings, indent=2))
+        return
+    
     if not meetings:
         typer.echo("No meetings found.")
         return
@@ -131,7 +136,10 @@ def list_meetings(
 
 
 @app.command()
-def show(query: str = typer.Argument(..., help="Meeting title or ID")):
+def show(
+    query: str = typer.Argument(..., help="Meeting title or ID"),
+    output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
+):
     """Show meeting details."""
     data = load_index()
     match = find_meeting(data, query)
@@ -139,6 +147,10 @@ def show(query: str = typer.Argument(..., help="Meeting title or ID")):
     if not match:
         typer.echo(f"Meeting not found: {query}", err=True)
         raise typer.Exit(1)
+    
+    if output_json:
+        print(json.dumps(match, indent=2))
+        return
     
     short_id = match.get("short_id", match.get("id", "")[:7])
     typer.echo(f"ID:         {short_id} ({match.get('id')})")
@@ -201,7 +213,9 @@ def resume(query: str = typer.Argument(..., help="Meeting title or ID")):
 
 
 @app.command()
-def stats():
+def stats(
+    output_json: bool = typer.Option(False, "--json", help="Output as JSON"),
+):
     """Show index statistics."""
     data = load_index()
     meetings = data["meetings"]
@@ -214,6 +228,16 @@ def stats():
     for m in meetings:
         key = f"{m.get('year')}-{m.get('month'):02d}" if m.get("year") and m.get("month") else "unknown"
         by_month[key] = by_month.get(key, 0) + 1
+    
+    if output_json:
+        print(json.dumps({
+            "total": total,
+            "with_transcript": with_transcript,
+            "with_resume": with_resume,
+            "generated_at": data.get("generated_at"),
+            "by_month": by_month,
+        }, indent=2))
+        return
     
     typer.echo(f"Total meetings:    {total}")
     typer.echo(f"With transcript:   {with_transcript}")
