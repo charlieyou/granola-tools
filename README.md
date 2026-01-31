@@ -23,7 +23,15 @@ GRANOLA_CLIENT_ID=your_client_id
 GRANOLA_HOME=~/.granola
 ```
 
-See `docs/GETTING_REFRESH_TOKEN.md` for token setup.
+To get tokens, extract from `~/Library/Application Support/Granola/supabase.json` after logging into Granola:
+
+```bash
+# Extract refresh token
+cat ~/Library/Application\ Support/Granola/supabase.json | jq -r '.workos_tokens | fromjson | .refresh_token'
+
+# Extract client_id from JWT
+cat ~/Library/Application\ Support/Granola/supabase.json | jq -r '.workos_tokens | fromjson | .access_token' | cut -d. -f2 | base64 -d 2>/dev/null | jq -r '.iss' | grep -o 'client_[^"]*'
+```
 
 ## Usage
 
@@ -78,6 +86,8 @@ The path in results contains the meeting UUID — use `granola show <uuid>` for 
 # Sync every 30 minutes, update qmd index + embeddings
 */30 * * * * ~/.local/bin/granola sync && ~/.local/bin/granola index && qmd update -c granola && qmd embed -c granola
 ```
+
+**Important:** Cron must run at least every hour. The refresh token is rotated on each sync to keep the session alive — if it's not used within ~1 hour, it expires and you'll need to re-extract tokens from Granola.
 
 `qmd embed` is incremental (content-hash based) — first run is slow, subsequent runs only process new/changed files.
 
